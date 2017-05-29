@@ -23,6 +23,8 @@ import json
 __version__ = '0.3.1'
 
 
+GPU_ERRORS = frozenset(['Not Supported', 'GPU is lost'])
+
 class ANSIColors:
     RESET   = '\033[0m'
     WHITE   = '\033[1m'
@@ -59,7 +61,7 @@ class GPUStat(object):
 
         # Handle '[Not Supported] for old GPU cards (#6)
         for k in self.entry.keys():
-            if 'Not Supported' in self.entry[k]:
+            if any(err in self.entry[k] for err in GPU_ERRORS):
                 self.entry[k] = None
 
 
@@ -263,7 +265,7 @@ class GPUStatCollection(object):
             process_entries.append(process_entry)
 
         pid_map = {int(e['pid']) : None for e in process_entries
-                   if not 'Not Supported' in e['pid']}
+                   if not any(err in e['pid'] for err in GPU_ERRORS)}
 
         # 2. map pid to username, etc.
         if pid_map:
@@ -282,7 +284,7 @@ class GPUStatCollection(object):
         # 3. add some process information to each process_entry
         for process_entry in process_entries[:]:
 
-            if 'Not Supported' in process_entry['pid']:
+            if any(err in process_entry['pid'] for err in GPU_ERRORS):
                 # TODO move this stuff into somewhere appropriate
                 # such as running_processes(): process_entry = ...
                 # or introduce Process class to elegantly handle it
